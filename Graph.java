@@ -43,8 +43,13 @@ public class Graph {
     directed = dir;
   }
   
-  public void addNode(String name) {
-    V.add(new Node(name));
+  public void addNode(String name, boolean s, boolean t) {
+    Node n = new Node(name, s, t);
+    V.add(n);
+    if (s)
+      S.add(n);
+    if (t)
+      T.add(n);
   }
   
   public void addEdge(String name1, String name2, boolean ghost) {
@@ -64,11 +69,11 @@ public class Graph {
     }
             
     if (node1 == null) {
-      node1 = new Node(name1);
+      node1 = new Node(name1, true, true);
       V.add(node1);
     }
     if (node2 == null) {
-      node2 = new Node(name2);
+      node2 = new Node(name2, true, true);
       V.add(node2);
     }
     E.add(new Edge(node1, node2, ghost));

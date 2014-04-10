@@ -1,7 +1,6 @@
-#Centrality Project
-##Marcin Swieczkowski
+#Centrality Project - Marcin Swieczkowski
 
-This is my project for CS 591 Data Mining with Terzi and Erdos. My goal is to experimentally evaluate algorithms that solve the following problem: Given a graph and a group of nodes within that graph, add k edges that maximize the centrality of the group.
+This is my project for CS 591 Data Mining with Terzi and Erdos. My goal is to experimentally evaluate algorithms that solve the following problem: **Given a graph and a group of nodes within that graph, add k edges that maximize the centrality of the group.**
 
 ###Importing Graphs
 
