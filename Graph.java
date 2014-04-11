@@ -4,43 +4,30 @@ import java.io.*;
 public class Graph {
   
   boolean directed;
+  boolean weighted;
+  boolean defaultS; // whether nodes are part of the S set by default
+  boolean defaultT;
   
   ArrayList<Node> V = new ArrayList<Node>(); // All vertices in the graph
   ArrayList<Edge> E = new ArrayList<Edge>(); // All edges
   ArrayList<Node> S = new ArrayList<Node>(); // All source vertices
   ArrayList<Node> T = new ArrayList<Node>(); // All destination vertices
   
-  public class Node {
-    boolean inS = true, inT = true;
-    String name;
-    ArrayList<Node> neighbors = new ArrayList<Node>();
-    
-    public Node(String n) {
-      name = n;
-    }
-    
-    public Node(String n, boolean s, boolean t) {
-      name = n;
-      inS = s;
-      inT = t;
-    }
-  }
+  HashMap<String, Integer> weights = new HashMap<String, Integer>();
   
-  public class Edge {
-    Node node1, node2;
-    boolean isGhost = false; // whether the edge is a ghost edge
-    boolean directed = Graph.this.directed;
-    
-    public Edge(Node n1, Node n2, boolean ghost) {
-      node1 = n1;
-      node2 = n2;
-      node1.neighbors.add(node2);
-      isGhost = ghost;
-    }
-  }
-  
-  public Graph(boolean dir) {
+  public Graph(boolean dir, boolean weight, boolean defS, boolean defT) {
     directed = dir;
+    weighted = weight;
+    defaultS = defS;
+    defaultT = defT;
+  }
+  
+  public Node findNode(String name) {
+    for (Node v : V) {
+      if (v.name.equals(name))
+        return v;
+    }
+    return null;
   }
   
   public void addNode(String name, boolean s, boolean t) {
@@ -52,31 +39,50 @@ public class Graph {
       T.add(n);
   }
   
-  public void addEdge(String name1, String name2, boolean ghost) {
+  /* Add an existing node to the set S */
+  public void addNodeS(String name) {
+    Node n = findNode(name);
+    assert(n != null);
+    S.add(n);
+    n.inS = true;
+  }
+  
+  /* Add an existing node to the set T */
+  public void addNodeT(String name) {
+    Node n = findNode(name);
+    assert(n != null);
+    T.add(n);
+    n.inT = true;
+  }
+  
+  public void addEdge(String name1, String name2) {
+    addEdge(name1, name2, false, -1);
+  }
+  public void addEdge(String name1, String name2, boolean ghost, int weight) {
     Node node1 = null, node2 = null;
     
-    for (Node v : V) {
-      if (v.name.equals(name1)) {
-        node1 = v;
-        break;
-      }
-    }
-    for (Node v : V) {
-      if (v.name.equals(name2)) {
-        node2 = v;
-        break;
-      }
-    }
-            
+    node1 = findNode(name1);
+    node2 = findNode(name2);
+    
     if (node1 == null) {
-      node1 = new Node(name1, true, true);
+      node1 = new Node(name1, defaultS, defaultT);
       V.add(node1);
     }
     if (node2 == null) {
-      node2 = new Node(name2, true, true);
+      node2 = new Node(name2, defaultS, defaultT);
       V.add(node2);
     }
-    E.add(new Edge(node1, node2, ghost));
+    if (!directed && (node1.neighbors.contains(node2) || node2.neighbors.contains(node1)))
+        return; // graph is undirected and edge already exists
+    E.add(new Edge(node1, node2, ghost, directed, weight));
+    if (weight != -1) {
+      weights.put(node1.name + ":" + node2.name, weight);
+      weights.put(node2.name + ":" + node1.name, weight);
+    }
+  }
+  
+  public int getWeight(String name1, String name2) {
+    return weights.get(name1 + ":" + name2);
   }
   
   /* Import a graph from .txt format */
@@ -88,7 +94,7 @@ public class Graph {
     while (in.ready()) {
       line = in.readLine();
       tokens = line.split("\t");
-      addEdge(tokens[0], tokens[1], false);
+      addEdge(tokens[0], tokens[1], false, weighted ? Integer.parseInt(tokens[2]) : -1);
     }
     
     in.close();
@@ -107,6 +113,8 @@ public class Graph {
       conn = "--";
     }
     out.println("\tnode [shape=circle, label=\"\"];");
+    if (!directed)
+      out.println("\tedge [arrowhead=none];");
     for (Node n : V) {
       if (n.inS && n.inT)
         out.println("\t" + n.name + " [style=filled, color=\"palevioletred\"];");
@@ -116,23 +124,15 @@ public class Graph {
         out.println("\t" + n.name + " [style=filled, color=\"powderblue\"];");
     }
     for (Edge e : E) {
-      out.print("\t" + e.node1.name + " " + conn + " " + e.node2.name + " [");
+      out.print("\t" + e.node1.name + " " + conn + " " + e.node2.name + " ");
       if (e.isGhost)
-        out.print("style=dotted, ");
-      if (!e.directed)
-        out.print("arrowhead=none, ");
-      out.println("label=\"\"];");
+        out.print("[style=dotted]");
+      if (e.weight >= 0)
+        out.print("[label=\"" + Integer.toString(e.weight) + "\"]");
+      out.println(";");
     }
     out.println("}");
     out.close();
-  }
-  
-  public static void main(String args[]) throws IOException {
-    Graph g = new Graph(true);
-    //g.importTxt("TransMatrix.txt");
-    g.addEdge("A", "B", false);
-    g.addEdge("B", "C", true);
-    g.exportDot();
   }
   
 }
