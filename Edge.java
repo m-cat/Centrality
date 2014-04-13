@@ -5,13 +5,13 @@ public class Edge {
   int weight;
   
   public Edge(Node n1, Node n2, boolean ghost, boolean dir, int w) {
+    n1.neighbors.add(n2);
+    if (!dir)
+      n2.neighbors.add(n1);
+    else
+      n2.parents.add(n1);
     node1 = n1;
     node2 = n2;
-    node1.neighbors.add(node2);
-    if (!dir)
-      node2.neighbors.add(node1);
-    else
-      node2.parents.add(node1);
     isGhost = ghost;
     directed = dir;
     weight = w;

@@ -94,7 +94,10 @@ public class Graph {
     while (in.ready()) {
       line = in.readLine();
       tokens = line.split("\t");
-      addEdge(tokens[0], tokens[1], false, weighted ? Integer.parseInt(tokens[2]) : -1);
+      if (weighted)
+        addEdge(tokens[0], tokens[1], false, Integer.parseInt(tokens[2]));
+      else
+        addEdge(tokens[0], tokens[1]);
     }
     
     in.close();
@@ -116,12 +119,18 @@ public class Graph {
     if (!directed)
       out.println("\tedge [arrowhead=none];");
     for (Node n : V) {
+      out.print("\t" + n.name + " ");
       if (n.inS && n.inT)
-        out.println("\t" + n.name + " [style=filled, color=\"palevioletred\"];");
+        out.print("[style=filled, color=\"palevioletred\"]");
       else if (n.inS)
-        out.println("\t" + n.name + " [style=filled, color=\"lightsalmon\"];");
+        out.print("[style=filled, color=\"lightsalmon\"]");
       else if (n.inT)
-        out.println("\t" + n.name + " [style=filled, color=\"powderblue\"];");
+        out.print("[style=filled, color=\"powderblue\"]");
+      if (n.inGroup)
+        out.print("[shape=doublecircle]");
+      //out.print("[label=\""+n.name+"\"]");
+      out.print("[label=\""+Integer.toString(n.pathsInOK)+"\"]");
+      out.println(";");
     }
     for (Edge e : E) {
       out.print("\t" + e.node1.name + " " + conn + " " + e.node2.name + " ");
@@ -135,4 +144,12 @@ public class Graph {
     out.close();
   }
   
+  public void print() {
+    for (Node v : V) {
+      System.out.print(v.name + ": ");
+      for (Node n : v.neighbors)
+        System.out.print(n.name + " ");
+      System.out.println();
+    }
+  }
 }
