@@ -3,26 +3,14 @@ import java.io.*;
 
 public class Algorithms {
   
-  /* Calculate a given node's centrality in a DAG */
-  /* INCOMPLETE - will probably not implement this for the project */
-  public static int centralityNodeDAG(Graph g, String name) {
-    HashMap<String, Integer> plist = new HashMap<String, Integer>();
-    Node n = g.findNode(name);
-    int prefix = 0, suffix = 0;
-    
-    for (Node t : g.T)
-      suffix += plist.get(t.name+":"+n.name);
-    return prefix * suffix;
-  }
-  
-  /* Calculate a given node's centrality in an unweighted, undirected graph */
-  public static int centralityNodeUUG(Graph g, String name) {
+  /* Calculate a given node's centrality */
+  public static int centralityNode(Graph g, String name) {
     String[] s = {name};
-    return centralityGroupUUG(g, s);
+    return centralityGroup(g, s);
   }
   
-  /* Calculate a group's centrality in an unweighted, undirected graph */
-  public static int centralityGroupUUG(Graph g, String[] group) {
+  /* Calculate a group's centrality */
+  public static int centralityGroup(Graph g, String[] group) {
     int centrality = 0;
     
     /* Initialize group */
@@ -33,7 +21,10 @@ public class Algorithms {
       n.inGroup = true;
     }
     for (Node s : g.S) {
-      centrality += centralityBFS(g, s);
+      if (g.weighted)
+        centrality += centralityDijkstra(g, s);
+      else
+        centrality += centralityBFS(g, s);
     }
     return centrality;
   }
@@ -54,6 +45,11 @@ public class Algorithms {
     s.pathsIn = 1;
     s.pathsInOK = s.inGroup ? 1 : 0;
     q.add(s);
+    for (Edge e : g.E) {
+      g.edgeScores.put(e.node1.name+":"+e.node2.name, 0.0);
+      if (!g.directed)
+        g.edgeScores.put(e.node2.name+":"+e.node1.name, 0.0);
+    }
     
     /* Run BFS */
     while (!q.isEmpty()) {
@@ -64,54 +60,52 @@ public class Algorithms {
         if (v.visited)
           continue;
         
+        Double alt = u.distance+1;
         if (!v.discovered) {
-          v.distance = u.distance+1;
+          v.distance = alt;
           v.pathsIn = u.pathsIn;
           if (v.inGroup)
             v.pathsInOK = u.pathsIn;
           else
             v.pathsInOK = u.pathsInOK;
           v.discovered = true;
+          v.parentsOK.clear();
+          v.parentsOK.add(u);
           q.add(v);
         }
-        else { // another equal-length path
+        else if (Math.abs(v.distance - alt) < .00001) { // another equal-length path
           v.pathsIn += u.pathsIn;
           if (v.inGroup)
             v.pathsInOK += u.pathsIn;
           else
             v.pathsInOK += u.pathsInOK;
+          v.parentsOK.add(u);
         }
       }
     }
     
+    /* Post-processing for edge removal heuristic */
+    for (Node v : g.V) {
+      int scoreUpdate = 0;
+      for (Node n : g.directed ? v.parents : v.neighbors) {
+        if (n.pathsInOK > v.pathsInOK)
+          scoreUpdate += n.pathsInOK - v.pathsInOK;
+      }
+      if (scoreUpdate > 0) {
+        for (Node n : v.parentsOK) {
+          String edgeStr = n.name+":"+v.name;
+          g.edgeScores.put(edgeStr, g.edgeScores.get(edgeStr) + scoreUpdate/v.parentsOK.size());
+        }
+      }
+    }
+    
+    /* Sum good paths in all destinations */
     for (Node t : g.T) {
       sumPaths += t.pathsInOK;
     }
     return sumPaths;
   }
   
-  public static int centralityNodeWUG(Graph g, String name) {
-    String[] s = {name};
-    return centralityGroupWUG(g, s);
-  }
-  
-  public static int centralityGroupWUG(Graph g, String[] group) {
-    int centrality = 0;
-    
-    /* Initialize group */
-    for (Node n : g.V)
-      n.inGroup = false;
-    for (String str : group) {
-      Node n = g.findNode(str);
-      n.inGroup = true;
-    }
-    for (Node s : g.S) {
-      centrality += centralityDijkstra(g, s);
-    }
-    return centrality;
-  }
-  
-  /* Calculate a given node's centrality in a weighted, undirected graph */
   public static int centralityDijkstra(Graph g, Node s) {
     PriorityQueue<Node> q = new PriorityQueue<Node>();
     int sumPaths = 0;
@@ -175,14 +169,18 @@ public class Algorithms {
     return new Graph(true, true, true, true);
   }
   
+  public static Graph maximizeCentralityGroup(Graph g, String name, int k) {
+    return new Graph(true, true, true, true);
+  }
+  
   public static void main(String args[]) throws IOException {
-    Graph g = new Graph(false, true, false, false);
+    Graph g = new Graph(true, false, false, false);
     //g.importTxt("TransMatrix.txt");
-    g.importTxt("testNodeCent.txt");
+    g.importTxt("testNodeCent2.txt");
     g.addNodeS("S");
     g.addNodeT("T2");
     String[] group = {"A", "B", "E2"};
-    System.out.println(centralityGroupWUG(g, group));
+    System.out.println(centralityGroup(g, group));
     g.exportDot();
   }
   

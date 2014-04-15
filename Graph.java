@@ -14,6 +14,7 @@ public class Graph {
   ArrayList<Node> T = new ArrayList<Node>(); // All destination vertices
   
   HashMap<String, Integer> weights = new HashMap<String, Integer>();
+  HashMap<String, Double> edgeScores = new HashMap<String, Double>();
   
   public Graph(boolean dir, boolean weight, boolean defS, boolean defT) {
     directed = dir;
@@ -77,7 +78,8 @@ public class Graph {
     E.add(new Edge(node1, node2, ghost, directed, weight));
     if (weight != -1) {
       weights.put(node1.name + ":" + node2.name, weight);
-      weights.put(node2.name + ":" + node1.name, weight);
+      if (!directed)
+        weights.put(node2.name + ":" + node1.name, weight);
     }
   }
   
@@ -138,6 +140,7 @@ public class Graph {
         out.print("[style=dotted]");
       if (e.weight >= 0)
         out.print("[label=\"" + Integer.toString(e.weight) + "\"]");
+      out.print("[label=\"" + Double.toString(edgeScores.get(e.node1.name+":"+e.node2.name)) + "\"]");
       out.println(";");
     }
     out.println("}");
@@ -147,9 +150,13 @@ public class Graph {
   public void print() {
     for (Node v : V) {
       System.out.print(v.name + ": ");
-      for (Node n : v.neighbors)
-        System.out.print(n.name + " ");
-      System.out.println();
+      for (Node n : v.neighbors) {
+        System.out.print(n.name);
+        if (weighted)
+          System.out.print("("+getWeight(v.name, n.name)+")");
+        System.out.print(" ");
+        System.out.println();
+      }
     }
   }
 }
