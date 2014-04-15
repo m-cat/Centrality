@@ -3,7 +3,6 @@ import java.io.*;
 
 public class Graph {
   
-  String name = null;  
   boolean directed;
   boolean weighted;
   boolean defaultS; // whether nodes are part of the S set by default
@@ -57,33 +56,11 @@ public class Graph {
     n.inT = true;
   }
   
-  public Edge findEdge(String name1, String name2) {
-    for (Edge e : E) {
-      if (e.node1.name.equals(name1) && e.node2.name.equals(name2))
-        return e;
-      else if (!directed && e.node2.name.equals(name1) && e.node1.name.equals(name2))
-        return e;
-    }
-    return null;
+  public void addEdge(String name1, String name2) {
+    addEdge(name1, name2, false, -1);
   }
-  
-  public Edge addEdge(Edge e) {
-    e.connect();
-    E.add(e);
-    weights.put(e.node1.name+":"+e.node2.name, e.weight);
-    edgeScores.put(e.node1.name+":"+e.node2.name, 0.0);
-    if (!directed) {
-      weights.put(e.node2.name+":"+e.node1.name, e.weight);
-      edgeScores.put(e.node2.name+":"+e.node1.name, 0.0);
-    }
-    return e;
-  }
-  public Edge addEdge(String name1, String name2) {
-    return addEdge(name1, name2, false, -1);
-  }
-  public Edge addEdge(String name1, String name2, boolean ghost, int weight) {
+  public void addEdge(String name1, String name2, boolean ghost, int weight) {
     Node node1 = null, node2 = null;
-    Edge e;
     
     node1 = findNode(name1);
     node2 = findNode(name2);
@@ -97,36 +74,13 @@ public class Graph {
       V.add(node2);
     }
     if (!directed && (node1.neighbors.contains(node2) || node2.neighbors.contains(node1)))
-        return null; // graph is undirected and edge already exists
-    E.add(e = new Edge(node1, node2, ghost, directed, weight));
+        return; // graph is undirected and edge already exists
+    E.add(new Edge(node1, node2, ghost, directed, weight));
     if (weight != -1) {
       weights.put(node1.name + ":" + node2.name, weight);
       if (!directed)
         weights.put(node2.name + ":" + node1.name, weight);
     }
-    edgeScores.put(node1.name+":"+node2.name, 0.0);
-    if (!directed)
-      edgeScores.put(node2.name+":"+node1.name, 0.0);
-    return e;
-  }
-  
-  public void removeEdge(String name1, String name2) {
-    removeEdge(findEdge(name1, name2));
-  }
-  
-  public void removeEdge(Edge e) {
-    e.disconnect();
-    E.remove(e);
-    weights.put(e.node1.name+":"+e.node2.name, null);
-    edgeScores.put(e.node1.name+":"+e.node2.name, null);
-    if (!directed) {
-      weights.put(e.node2.name+":"+e.node1.name, null);
-      edgeScores.put(e.node2.name+":"+e.node1.name, null);
-    }
-  }
-  
-  public boolean edgeExists(String name1, String name2) {
-    return (edgeScores.get(name1+":"+name2) != null || (!directed && edgeScores.get(name2+":"+name1) != null));
   }
   
   public int getWeight(String name1, String name2) {
@@ -163,8 +117,6 @@ public class Graph {
       out.println("graph G {");
       conn = "--";
     }
-    if (name != null)
-      out.println("\tgraph [label=\""+name+"\"];");
     out.println("\tnode [shape=circle, label=\"\"];");
     if (!directed)
       out.println("\tedge [arrowhead=none];");
@@ -203,8 +155,8 @@ public class Graph {
         if (weighted)
           System.out.print("("+getWeight(v.name, n.name)+")");
         System.out.print(" ");
+        System.out.println();
       }
-      System.out.println();
     }
   }
 }
