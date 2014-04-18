@@ -16,6 +16,7 @@ public class Node implements Comparable<Node> {
   /* Bookkeeping for edge removal heuristic */
   ArrayList<Node> parentsOK = new ArrayList<Node>();
   int score;
+  int destAmount;
   
   public Node(String n) {
     name = n;

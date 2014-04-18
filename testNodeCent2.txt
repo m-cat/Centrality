@@ -5,7 +5,7 @@ A	X	2
 B	X	1
 C	E	1
 X	F	2
-X	B2
+X	B2	1
 E	F	1
 E	G	1
 F	H	1

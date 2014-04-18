@@ -14,7 +14,7 @@ public class Graph {
   ArrayList<Node> S = new ArrayList<Node>(); // All source vertices
   ArrayList<Node> T = new ArrayList<Node>(); // All destination vertices
   
-  HashMap<String, Integer> weights = new HashMap<String, Integer>();
+  HashMap<String, Double> weights = new HashMap<String, Double>();
   HashMap<String, Double> edgeScores = new HashMap<String, Double>();
   
   public Graph(boolean dir, boolean weight, boolean defS, boolean defT) {
@@ -81,7 +81,7 @@ public class Graph {
   public Edge addEdge(String name1, String name2) {
     return addEdge(name1, name2, false, -1);
   }
-  public Edge addEdge(String name1, String name2, boolean ghost, int weight) {
+  public Edge addEdge(String name1, String name2, boolean ghost, double weight) {
     Node node1 = null, node2 = null;
     Edge e;
     
@@ -99,11 +99,9 @@ public class Graph {
     if (!directed && (node1.neighbors.contains(node2) || node2.neighbors.contains(node1)))
         return null; // graph is undirected and edge already exists
     E.add(e = new Edge(node1, node2, ghost, directed, weight));
-    if (weight != -1) {
-      weights.put(node1.name + ":" + node2.name, weight);
-      if (!directed)
-        weights.put(node2.name + ":" + node1.name, weight);
-    }
+    weights.put(node1.name + ":" + node2.name, weight);
+    if (!directed)
+      weights.put(node2.name + ":" + node1.name, weight);
     edgeScores.put(node1.name+":"+node2.name, 0.0);
     if (!directed)
       edgeScores.put(node2.name+":"+node1.name, 0.0);
@@ -129,7 +127,7 @@ public class Graph {
     return (edgeScores.get(name1+":"+name2) != null || (!directed && edgeScores.get(name2+":"+name1) != null));
   }
   
-  public int getWeight(String name1, String name2) {
+  public double getWeight(String name1, String name2) {
     return weights.get(name1 + ":" + name2);
   }
   
@@ -179,7 +177,9 @@ public class Graph {
       if (n.inGroup)
         out.print("[shape=doublecircle]");
       //out.print("[label=\""+n.name+"\"]");
-      out.print("[label=\""+Integer.toString(n.pathsInOK)+"\"]");
+      //out.print("[label=\""+Integer.toString(n.pathsInOK)+"\"]");
+      //out.print("[label=\""+Double.toString(n.distance)+"\"]");
+      out.print("[label=\""+Integer.toString(n.destAmount)+"\"]");
       out.println(";");
     }
     for (Edge e : E) {
@@ -187,7 +187,7 @@ public class Graph {
       if (e.isGhost)
         out.print("[style=dotted]");
       if (e.weight >= 0)
-        out.print("[label=\"" + Integer.toString(e.weight) + "\"]");
+        out.print("[label=\"" + Double.toString(e.weight) + "\"]");
       out.print("[label=\"" + Double.toString(edgeScores.get(e.node1.name+":"+e.node2.name)) + "\"]");
       out.println(";");
     }

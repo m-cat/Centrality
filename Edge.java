@@ -2,11 +2,11 @@ public class Edge implements Comparable<Edge> {
   Node node1, node2;
   boolean isGhost = false; // whether the edge is a ghost edge
   boolean directed;
-  int weight;
+  double weight;
   int impact;
   String id;
   
-  public Edge(Node n1, Node n2, boolean ghost, boolean dir, int w) {
+  public Edge(Node n1, Node n2, boolean ghost, boolean dir, double w) {
     node1 = n1;
     node2 = n2;
     directed = dir;

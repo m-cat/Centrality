@@ -54,6 +54,7 @@ public class Algorithms {
       v.pathsInOK = 0;
       v.discovered = false;
       v.visited = false;
+      v.destAmount = 0;
     }
     s.discovered = true;
     s.pathsIn = 1;
@@ -95,6 +96,14 @@ public class Algorithms {
     
     /* Post-processing for edge removal heuristic */
     if (post) {
+      /* Trace back to a source, update destination amounts along the way */
+      for (Node t : g.T) {
+        LinkedHashSet<Node> temp = new LinkedHashSet<Node>();
+        temp.add(t);
+        traceBack(temp, 0);
+      }
+      
+      /* Compute scores */
       for (Node v : g.V) {
         int scoreUpdate = 0;
         for (Node n : g.directed ? v.parents : v.neighbors) {
@@ -102,9 +111,9 @@ public class Algorithms {
             scoreUpdate += n.pathsInOK - v.pathsInOK;
         }
         if (scoreUpdate > 0) {
-          for (Node n : v.parentsOK) {
-            String edgeStr = n.name+":"+v.name;
-            g.edgeScores.put(edgeStr, g.edgeScores.get(edgeStr) + scoreUpdate/v.parentsOK.size());
+          for (Node p : v.parentsOK) {
+            String edgeStr = p.name+":"+v.name;
+            g.edgeScores.put(edgeStr, g.edgeScores.get(edgeStr) + scoreUpdate/v.parentsOK.size()*p.destAmount);
           }
         }
       }
@@ -115,6 +124,23 @@ public class Algorithms {
       sumPaths += t.pathsInOK;
     }
     return sumPaths;
+  }
+
+  /* Helper function for post-processing step in edge removal heuristic */
+  /* THIS DOESN'T WORK RIGHT NOW */
+  public static void traceBack(LinkedHashSet<Node> nodes, int dests) {
+    if (nodes.isEmpty())
+      return;
+    
+    LinkedHashSet<Node> next = new LinkedHashSet<Node>();
+    int nextDests = dests;
+    for (Node n : nodes) {
+      n.destAmount += dests;
+      nextDests += n.inT ? 1 : 0;
+      for (Node p : n.parentsOK)
+        next.add(p);
+    }
+    traceBack(next, nextDests);
   }
   
   public static int centralityDijkstra(Graph g, Node s) {
@@ -158,7 +184,7 @@ public class Algorithms {
           v.discovered = true;
           q.add(v);
         }
-        else if (Math.abs(alt - v.distance) < .00001) { // another equal-length path
+        else if (Math.abs(alt - v.distance) < .00001) { // another equal-length incoming path
           q.remove(v);
           v.pathsIn += u.pathsIn;
           if (v.inGroup)
@@ -184,21 +210,29 @@ public class Algorithms {
   public static void maximizeCentralityGroup(Graph g, String[] group, int k, String heuristic) {
     setGroup(g, group);
     
-    if (heuristic.equals("greedy")) {
-      maximizeCentralityGroupGreedy(g, group, k);
-      g.name = "greedy k="+Integer.toString(k);
+    if (!g.weighted) {
+      if (heuristic.equals("greedy")) {
+        maximizeCentralityGroupGreedy(g, group, k);
+        g.name = "greedy k="+Integer.toString(k);
+      }
+      else if (heuristic.equals("batch")) {
+        maximizeCentralityGroupBatch(g, group, k);
+        g.name = "batch k="+Integer.toString(k);
+      }
+      else if (heuristic.equals("adjacent")) {
+        maximizeCentralityGroupAdjacent(g, group, k);
+        g.name = "greedy-1 k="+Integer.toString(k);
+      }
     }
-    else if (heuristic.equals("batch")) {
-      maximizeCentralityGroupBatch(g, group, k);
-      g.name = "batch k="+Integer.toString(k);
-    }
-    else if (heuristic.equals("adjacent")) {
-      maximizeCentralityGroupAdjacent(g, group, k);
-      g.name = "greedy-1 k="+Integer.toString(k);
+    else { // run weighted versions of the algorithms
+      if (heuristic.equals("greedy")) {
+        maximizeCentralityGroupGreedyWeighted(g, group, k);
+        g.name = "greedy k="+Integer.toString(k);
+      }
     }
   }
   
-  public static void maximizeCentralityGroupGreedy(Graph g, String[] name, int k) {
+  public static void maximizeCentralityGroupGreedy(Graph g, String[] group, int k) {
     for (int i = 0; i < k; i ++) {
       Edge curBestEdge = null;
       
@@ -207,7 +241,7 @@ public class Algorithms {
           if (n1.name.equals(n2.name) || g.edgeExists(n1.name, n2.name))
             continue;
           Edge e = g.addEdge(n1.name, n2.name, true, -1);
-          e.impact = centralityGroup(g, name, false);
+          e.impact = centralityGroup(g, group, false);
           if (curBestEdge == null || e.impact > curBestEdge.impact)
             curBestEdge = e;
           g.removeEdge(e);
@@ -218,16 +252,15 @@ public class Algorithms {
     }
   }
   
-  public static void maximizeCentralityGroupBatch(Graph g, String[] name, int k) {
+  public static void maximizeCentralityGroupBatch(Graph g, String[] group, int k) {
     PriorityQueue<Edge> ghostEdges = new PriorityQueue<Edge>();
-    int curCentrality = centralityGroup(g, name, false);
     
     for (Node n1 : g.V) {
       for (Node n2 : g.V) {
         if (n1.name.equals(n2.name) || g.edgeExists(n1.name, n2.name))
           continue;
         Edge e = g.addEdge(n1.name, n2.name, true, -1);
-        e.impact = centralityGroup(g, name, false);
+        e.impact = centralityGroup(g, group, false);
         ghostEdges.add(e);
         g.removeEdge(e);
       }
@@ -238,7 +271,7 @@ public class Algorithms {
     }
   }
   
-  public static void maximizeCentralityGroupAdjacent(Graph g, String[] name, int k) {
+  public static void maximizeCentralityGroupAdjacent(Graph g, String[] group, int k) {
     for (int i = 0; i < k; i ++) {
       Edge curBestEdge = null;
       
@@ -249,7 +282,7 @@ public class Algorithms {
           if (n1.name.equals(n2.name) || g.edgeExists(n1.name, n2.name))
             continue;
           Edge e = g.addEdge(n1.name, n2.name, true, -1);
-          e.impact = centralityGroup(g, name, false);
+          e.impact = centralityGroup(g, group, false);
           if (curBestEdge == null || e.impact > curBestEdge.impact)
             curBestEdge = e;
           g.removeEdge(e);
@@ -260,19 +293,53 @@ public class Algorithms {
     }
   }
   
+  /* TODO: figure out how to assign weights of new edges */
+  public static void maximizeCentralityGroupGreedyWeighted(Graph g, String[] group, int k) {
+    Edge curBestEdge = null;
+    double cost, curCost = 0;
+    
+    do {
+      curBestEdge = null;
+      for (Node n1 : g.V) {
+        for (Node n2 : g.V) {
+          if (n1.name.equals(n2.name) || g.edgeExists(n1.name, n2.name))
+            continue;
+          cost = Math.abs(n2.distance - n1.distance);
+          if (cost > k)
+            continue;
+          Edge e = g.addEdge(n1.name, n2.name, true, cost);
+          e.impact = centralityGroup(g, group, false);
+          if ((curBestEdge == null || e.impact > curBestEdge.impact) && cost > 0) {
+            curBestEdge = e;
+            curCost = cost;
+          }
+          g.removeEdge(e);
+        }
+      }
+      
+      if (curBestEdge != null) {
+        g.addEdge(curBestEdge);
+        k -= curCost;
+      }
+    } while (curBestEdge != null);
+  }
+  
   public static void main(String args[]) throws IOException {
     double cent1, cent2;
-    Graph g = new Graph(false, false, false, false);
-    g.name = "k=2 batch processing";
+    Graph g = new Graph(true, false, false, false);
     //g.importTxt("TransMatrix.txt");
     g.importTxt("testNodeCent.txt");
     g.addNodeS("S");
     g.addNodeT("T2");
+    //g.addNodeT("F2");
+    //String[] group = {"A"};
     String[] group = {"A", "B", "E2"};
+    //g.print();
     cent1 = centralityGroup(g, group, false);
-    maximizeCentralityGroup(g, group, 2, "adjacent");
-    cent2 = centralityGroup(g, group, false);
-    System.out.println(100*(cent2-cent1)/cent1);
+    //maximizeCentralityGroup(g, group, 9, "greedy");
+    cent2 = centralityGroup(g, group, true);
+    //System.out.println(100*(cent2-cent1)/cent1); // percent centrality increase
+    System.out.println(cent2);
     g.exportDot();
   }
   
