@@ -3,7 +3,7 @@ public class Edge implements Comparable<Edge> {
   boolean isGhost = false; // whether the edge is a ghost edge
   boolean directed;
   double weight;
-  int impact;
+  long impact;
   String id;
   
   public Edge(Node n1, Node n2, boolean ghost, boolean dir, double w) {

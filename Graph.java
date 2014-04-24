@@ -149,6 +149,34 @@ public class Graph {
     in.close();
   }
   
+  /* Imports very basic GML files */
+  public void importGML(String filename) throws FileNotFoundException, IOException {
+    String name1, name2, line;
+    String[] tokens;
+    BufferedReader in = new BufferedReader(new FileReader(filename));
+    
+    while (in.ready()) {
+      line = in.readLine();
+      tokens = line.trim().split(" ");
+      if (!tokens[0].equals("edge"))
+        continue;
+      line = in.readLine();
+      line = in.readLine();
+      tokens = line.trim().split(" ");
+      name1 = tokens[1];
+      line = in.readLine();
+      tokens = line.trim().split(" ");
+      name2 = tokens[1];
+      line = in.readLine();
+      if (weighted)
+        addEdge(name1, name2, false, Integer.parseInt(tokens[2]));
+      else
+        addEdge(name1, name2);
+    }
+    
+    in.close();
+  }
+  
   /* Export the graph in .dot format */
   public void exportDot() throws IOException {
     String conn;
@@ -177,9 +205,9 @@ public class Graph {
       if (n.inGroup)
         out.print("[shape=doublecircle]");
       //out.print("[label=\""+n.name+"\"]");
-      //out.print("[label=\""+Integer.toString(n.pathsInOK)+"\"]");
+      out.print("[label=\""+Integer.toString(n.pathsInOK)+"\"]");
       //out.print("[label=\""+Double.toString(n.distance)+"\"]");
-      out.print("[label=\""+Integer.toString(n.destAmount)+"\"]");
+      //out.print("[label=\""+Integer.toString(n.destAmount)+"\"]");
       out.println(";");
     }
     for (Edge e : E) {

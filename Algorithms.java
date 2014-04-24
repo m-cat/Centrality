@@ -12,15 +12,69 @@ public class Algorithms {
     }
   }
   
+  /* Tries to find a group of size k with maximal centrality.
+   * Uses greedy selection method. */
+  public static String[] maxGroup(Graph g, int k) {
+    ArrayList<String> group = new ArrayList<String>();
+    for (int i = 0; i < k; i ++) {
+      Node cur = null;
+      long curCent = 0;
+      
+      for (Node v : g.V) {
+        if (group.contains(v.name))
+          continue;
+        
+        group.add(v.name);
+        long cent = centralityGroup(g, group.toArray(new String[group.size()]), false);
+        if (cur == null || cent > curCent) {
+          cur = v;
+          curCent = cent;
+        }
+        group.remove(v.name);
+      }
+      
+      if (cur == null)
+        break;
+      group.add(cur.name);
+    }
+    return group.toArray(new String[group.size()]);
+  }
+  
+  public static String[] minGroup(Graph g, int k) {
+    ArrayList<String> group = new ArrayList<String>();
+    for (int i = 0; i < k; i ++) {
+      Node cur = null;
+      long curCent = 0;
+      
+      for (Node v : g.V) {
+        if (group.contains(v.name))
+          continue;
+        
+        group.add(v.name);
+        long cent = centralityGroup(g, group.toArray(new String[group.size()]), false);
+        if (cur == null || cent < curCent) {
+          cur = v;
+          curCent = cent;
+        }
+        group.remove(v.name);
+      }
+      
+      if (cur == null)
+        break;
+      group.add(cur.name);
+    }
+    return group.toArray(new String[group.size()]);
+  }
+  
   /* Calculate a given node's centrality */
-  public static int centralityNode(Graph g, String name, boolean post) {
+  public static long centralityNode(Graph g, String name, boolean post) {
     String[] s = {name};
     return centralityGroup(g, s, post);
   }
   
   /* Calculate a group's centrality */
-  public static int centralityGroup(Graph g, String[] group, boolean post) {
-    int centrality = 0;
+  public static long centralityGroup(Graph g, String[] group, boolean post) {
+    long centrality = 0;
     
     /* Initialize group */
     setGroup(g, group);
@@ -100,7 +154,7 @@ public class Algorithms {
       for (Node t : g.T) {
         LinkedHashSet<Node> temp = new LinkedHashSet<Node>();
         temp.add(t);
-        traceBack(temp, 0);
+        traceBack(temp);
       }
       
       /* Compute scores */
@@ -127,20 +181,17 @@ public class Algorithms {
   }
 
   /* Helper function for post-processing step in edge removal heuristic */
-  /* THIS DOESN'T WORK RIGHT NOW */
-  public static void traceBack(LinkedHashSet<Node> nodes, int dests) {
+  public static void traceBack(LinkedHashSet<Node> nodes) {
     if (nodes.isEmpty())
       return;
     
     LinkedHashSet<Node> next = new LinkedHashSet<Node>();
-    int nextDests = dests;
     for (Node n : nodes) {
-      n.destAmount += dests;
-      nextDests += n.inT ? 1 : 0;
+      n.destAmount += 1;
       for (Node p : n.parentsOK)
         next.add(p);
     }
-    traceBack(next, nextDests);
+    traceBack(next);
   }
   
   public static int centralityDijkstra(Graph g, Node s) {
@@ -325,21 +376,25 @@ public class Algorithms {
   }
   
   public static void main(String args[]) throws IOException {
-    double cent1, cent2;
-    Graph g = new Graph(true, false, false, false);
+    double cent1 = 0.0, cent2 = 0.0;
+    Graph g = new Graph(false, false, true, true);
+    g.importGML("karate.gml");
     //g.importTxt("TransMatrix.txt");
-    g.importTxt("testNodeCent.txt");
-    g.addNodeS("S");
-    g.addNodeT("T2");
+    //g.importTxt("testNodeCent.txt");
+    //g.addNodeS("S");
+    //g.addNodeT("T2");
     //g.addNodeT("F2");
-    //String[] group = {"A"};
-    String[] group = {"A", "B", "E2"};
+    //String[] group = maxGroup(g, 5);
+    //String[] group = {"A", "B", "E2"};
     //g.print();
-    cent1 = centralityGroup(g, group, false);
-    //maximizeCentralityGroup(g, group, 9, "greedy");
-    cent2 = centralityGroup(g, group, true);
-    //System.out.println(100*(cent2-cent1)/cent1); // percent centrality increase
-    System.out.println(cent2);
+    //cent1 = centralityGroup(g, group, false);
+    /*for (int k = 0; k < 20; k ++) {
+      maximizeCentralityGroup(g, group, 1, "greedy");
+      cent2 = centralityGroup(g, group, false);
+      System.out.print(Integer.toString(k+1) + "\t");
+      System.out.println(100*(cent2-cent1)/cent1); // percent centrality increase
+    }*/
+    System.out.println(cent1);
     g.exportDot();
   }
   
