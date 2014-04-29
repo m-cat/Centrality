@@ -32,13 +32,14 @@ public class Graph {
     return null;
   }
   
-  public void addNode(String name, boolean s, boolean t) {
+  public Node addNode(String name, boolean s, boolean t) {
     Node n = new Node(name, s, t);
     V.add(n);
     if (s)
       S.add(n);
     if (t)
       T.add(n);
+    return n;
   }
   
   /* Add an existing node to the set S */
@@ -89,12 +90,10 @@ public class Graph {
     node2 = findNode(name2);
     
     if (node1 == null) {
-      node1 = new Node(name1, defaultS, defaultT);
-      V.add(node1);
+      node1 = addNode(name1, defaultS, defaultT);
     }
     if (node2 == null) {
-      node2 = new Node(name2, defaultS, defaultT);
-      V.add(node2);
+      node2 = addNode(name2, defaultS, defaultT);
     }
     if (!directed && (node1.neighbors.contains(node2) || node2.neighbors.contains(node1)))
         return null; // graph is undirected and edge already exists
@@ -108,8 +107,10 @@ public class Graph {
     return e;
   }
   
-  public void removeEdge(String name1, String name2) {
-    removeEdge(findEdge(name1, name2));
+  public Edge removeEdge(String name1, String name2) {
+    Edge e = findEdge(name1, name2);
+    removeEdge(e);
+    return e;
   }
   
   public void removeEdge(Edge e) {
@@ -168,10 +169,7 @@ public class Graph {
       tokens = line.trim().split(" ");
       name2 = tokens[1];
       line = in.readLine();
-      if (weighted)
-        addEdge(name1, name2, false, Integer.parseInt(tokens[2]));
-      else
-        addEdge(name1, name2);
+      addEdge(name1, name2);
     }
     
     in.close();
@@ -205,6 +203,7 @@ public class Graph {
       if (n.inGroup)
         out.print("[shape=doublecircle]");
       //out.print("[label=\""+n.name+"\"]");
+      //out.print("[label=\""+Integer.toString(n.pathsIn)+"\"]");
       out.print("[label=\""+Integer.toString(n.pathsInOK)+"\"]");
       //out.print("[label=\""+Double.toString(n.distance)+"\"]");
       //out.print("[label=\""+Integer.toString(n.destAmount)+"\"]");
@@ -216,7 +215,8 @@ public class Graph {
         out.print("[style=dotted]");
       if (e.weight >= 0)
         out.print("[label=\"" + Double.toString(e.weight) + "\"]");
-      out.print("[label=\"" + Double.toString(edgeScores.get(e.node1.name+":"+e.node2.name)) + "\"]");
+      //if (edgeScores.get(e.node1.name+":"+e.node2.name) != 0.0)
+      //  out.print("[label=\"" + Double.toString(edgeScores.get(e.node1.name+":"+e.node2.name)) + "\"]");
       out.println(";");
     }
     out.println("}");
