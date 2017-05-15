@@ -1,4 +1,8 @@
-# I haven't found a java compiler for mingw, so this makefile is a bit useless at the moment.
+run: build
+	java -cp bin Main
 
-clean :
-	rm *.class *~ *.dot *.png
+build:
+	javac -d bin src/*.java
+
+clean:
+	rm *~ *.dot *.png
